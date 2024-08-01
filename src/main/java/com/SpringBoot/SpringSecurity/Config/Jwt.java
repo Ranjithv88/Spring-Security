@@ -42,8 +42,25 @@ public class Jwt {
         return Keys.hmacShaKeyFor(KeyByte);
     }
 
-    public Claims Extraclaims(String token){
-        return Jwts.parserBuilder().setSigningKey(getSignInKey()).build()
+    public String extractEmail(String token) {
+        return extractClaim(token).get("email").toString();
+    }
+
+    public boolean isTokenValid(String token, UserDetails userDetails) {
+        final String username = extractEmail(token);
+        return (username.equals(userDetails.getUsername())) && !    isTokenExpired(token);
+    }
+
+    private boolean isTokenExpired(String token) {
+        return extractExpiration(token).before(new Date());
+    }
+
+    private Date extractExpiration(String token) {
+        return  extractClaim(token).getExpiration();
+    }
+
+    public Claims extractClaim(String token) {
+        return Jwts.parserBuilder().setSigningKey(signInkey()).build()
                 .parseClaimsJws(token).getBody();
     }
 
