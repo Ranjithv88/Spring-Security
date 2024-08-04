@@ -1,6 +1,6 @@
 package com.SpringBoot.SpringSecurity.Service;
 
-import com.SpringBoot.SpringSecurity.Config.Jwt;
+import com.SpringBoot.SpringSecurity.Config.JWTUtils;
 import com.SpringBoot.SpringSecurity.Model.Login;
 import com.SpringBoot.SpringSecurity.Model.Register;
 import com.SpringBoot.SpringSecurity.Model.Role;
@@ -8,14 +8,12 @@ import com.SpringBoot.SpringSecurity.Model.User;
 import com.SpringBoot.SpringSecurity.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +26,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager AuthManager;
-    private final Jwt jwt;
+    private final JWTUtils jwtUtils;
 
     public String RegisterService (Register register){
         var user = User.builder()
@@ -43,6 +41,7 @@ public class AuthService {
     }
 
     public ResponseEntity<?> login(Login login){
+
         try {
             Authentication authentication = AuthManager.authenticate(new UsernamePasswordAuthenticationToken(login.getEmail(),login.getPassword()));
             SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -50,10 +49,29 @@ public class AuthService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(" UserName OR Password Invalid .....! ");
         }
 
-        Optional<User> user = userRepository.FindByEmail(login.getEmail());
+        Optional<User> user = userRepository.findByEmail(login.getEmail());
         if (user.isPresent()){
-            String Token = jwt.TokenG(user.get());
+            String Token = jwtUtils.generateToken(user.get());
         return ResponseEntity.ok(Token);
+        } else {
+
+            return ResponseEntity.noContent().build();
+
+        }
+
+    }
+
+    public ResponseEntity<User> update(int id, String role) {
+        Optional<User> user = userRepository.findById(id);
+        if (user.isPresent()) {
+            if (role.equals("DEVELOPER")) {
+                user.get().setRole(Role.DEVOLEPER);
+            } else if (role.equals("ADMIN")) {
+                user.get().setRole(Role.ADMIN);
+            } else {
+                user.get().setRole(Role.USER);
+            }
+            return ResponseEntity.status(HttpStatus.CREATED).body(userRepository.save(user.get()));
         } else {
             return ResponseEntity.noContent().build();
         }
