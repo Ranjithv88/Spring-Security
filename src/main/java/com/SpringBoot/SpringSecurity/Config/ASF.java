@@ -25,7 +25,7 @@ public class ASF extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,@NonNull HttpServletResponse response,@NonNull FilterChain filterChain) throws ServletException, IOException {
 
-        final String auth = request.getHeader(" Authorization ");
+        final String auth = request.getHeader("Authorization");
         final String jwt;
         final String email;
 

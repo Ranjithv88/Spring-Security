@@ -6,6 +6,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -17,7 +18,8 @@ import java.util.stream.Collectors;
 @Service
 public class JWTUtils {
 
-    private static final String SECRET_KEY = "404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
+    @Value("${spring.jwtToken.secretKey}")
+    private String SECRET_KEY;
 
     public String extractEmail(String Token) {
         return extractClaim(Token).get("email").toString();
@@ -29,14 +31,14 @@ public class JWTUtils {
 
         if(roleClaim instanceof List<?>) {
             @SuppressWarnings("unchecked")
-            List<HashMap<String,String>> roles = (List<HashMap<String, String>>) roleClaim;
+            List<HashMap<String,String>> roles = (List<HashMap<String,String>>) roleClaim;
             return roles.stream()
                     .map(x-> new SimpleGrantedAuthority(x.get("authority")))
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toSet());
 
         }else {
 
-            return List.of(new SimpleGrantedAuthority((String) roleClaim));
+            return List.of(new SimpleGrantedAuthority(null));
 
         }
 
@@ -50,7 +52,7 @@ public class JWTUtils {
                 .builder()
                 .setClaims(extraClaims)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 24))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10 ))
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
 
